@@ -9,7 +9,6 @@
 #include <sys/mman.h>
 #include <sys/uio.h>
 
-#include <linux/membarrier.h>
 #include <linux/io_uring.h> //kernel 5.1 required
 
 #define URING_QUEUE_SIZE  1024
@@ -62,11 +61,6 @@ int io_uring_enter(int ring_fd, unsigned int to_submit,unsigned int min_complete
 
 int io_uring_register(int fd, unsigned int opcode, const void *arg, unsigned int nr_args) {
     return (int) syscall(__NR_io_uring_register, fd, opcode, arg, nr_args);
-}
-
-int membarrier(int cmd, int flags)
-{
-    return syscall(__NR_membarrier, cmd, flags);
 }
 
 
@@ -233,7 +227,6 @@ int read_cqe() {
 
 int ur_needs_waking() {
    wmb();
-   //membarrier(MEMBARRIER_CMD_GLOBAL,0);   //something's off here. need to figure out.
    if (*_sq.flags & IORING_SQ_NEED_WAKEUP) {
       printf("waking up..\n");
       io_uring_enter(uring_fd, 0, 0, IORING_ENTER_SQ_WAKEUP);
@@ -294,8 +287,6 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Error reading file %s\n", argv[i]);
             return 1;
         }
-        //sleep(1); //testing
-        //ur_needs_waking(); //testing
     }
    
 
