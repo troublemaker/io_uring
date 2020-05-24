@@ -68,7 +68,7 @@ int init_uring() {
 
     uring_fd = io_uring_setup(URING_QUEUE_SIZE, &p); 
     if (uring_fd < 0) {
-        perror("io_uring_setup");
+        perror("io_uring_setup failed");
         return 1;
     }
 
