@@ -131,14 +131,15 @@ void* launch_uring(void *arg) {
             	case ACCEPT:
 	                res = cqe->res; //new socket FD
 			
- 			//printf("ACCEPT SOCKET# %i in thread# %i \n", res, thread_num);
-                        //fflush(stdout);
+ 			        //printf("ACCEPT SOCKET# %i in thread# %i \n", res, thread_num);
+                    //fflush(stdout);
       
-                        io_uring_cqe_seen(&context->uring, cqe);
+                    io_uring_cqe_seen(&context->uring, cqe);
 
-                        if (res > 0) {
+                    if (res > 0) {
 	                   io_read(context, res, CLIENT_MESSAGE_SIZE);
-                        }
+                    }
+                    
 	                io_accept(context, sock_listen, (struct sockaddr *)&cli_addr, &addr_len);
             		break;
 
