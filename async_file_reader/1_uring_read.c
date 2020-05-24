@@ -11,6 +11,9 @@
 
 #include <linux/io_uring.h> //kernel 5.1 required
 
+#define __NR_io_uring_setup 425
+#define __NR_io_uring_enter 426
+
 #define URING_QUEUE_SIZE  1024
 
 #define rmb() __asm__ __volatile__("lock; addl $0,0(%%rsp)":::"memory")
