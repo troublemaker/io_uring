@@ -15,14 +15,14 @@
 
 //net
 #define LISTEN_PORT 7777
-#define LISTEN_BACKLOG 1024
+#define LISTEN_BACKLOG 10000
 
 //net app
 #define CLIENT_MESSAGE_SIZE 1024
-#define CONNECTIONS_POOL_SIZE 4096 
+#define CONNECTIONS_POOL_SIZE 10000 
 
 //io
-#define IO_URING_LEN 8192
+#define IO_URING_LEN 32768
 
 
 enum socket_state {
@@ -108,11 +108,10 @@ void* launch_uring(void *arg) {
     // main io loop
     while (1)
     {
-
-        io_uring_submit_and_wait(&context->uring, 1);
+        io_uring_submit_and_wait(&context->uring);
 
         struct io_uring_cqe *cqes[IO_URING_LEN];
-        int total_cqes = io_uring_peek_batch_cqe(&context->uring, cqes, sizeof(cqes) / sizeof(cqes[0]));
+        int total_cqes = io_uring_peek_batch_cqe(&context->uring, cqes, IO_URING_LEN);
 
         // iterate through CQEs
         for (int i = 0; i < total_cqes; i++)
@@ -122,39 +121,38 @@ void* launch_uring(void *arg) {
 
 
             switch(cqe_data->state) {
-            	case ACCEPT:
-	                res = cqe->res; //new socket FD
-			
- 			        //printf("ACCEPT SOCKET# %i in thread# %i \n", res, thread_num);
+                case ACCEPT:
+                    res = cqe->res; //new socket FD
+
+                    //printf("ACCEPT SOCKET# %i in thread# %i \n", res, thread_num);
                     //fflush(stdout);
-      
+
                     io_uring_cqe_seen(&context->uring, cqe);
 
                     if (res > 0) {
-	                   io_read(context, res, CLIENT_MESSAGE_SIZE);
+                        io_read(context, res, CLIENT_MESSAGE_SIZE);
                     }
-                    
-	                io_accept(context, sock_listen, (struct sockaddr *)&cli_addr, &addr_len);
-            		break;
 
-            	case READ:
-	                res = cqe->res; //bytes read
+                    io_accept(context, sock_listen, (struct sockaddr *)&cli_addr, &addr_len);
+                    break;
 
-	                if (res <= 0) {
-	               	    //connection was closed
-	                    io_uring_cqe_seen(&context->uring, cqe);
-	                    close(cqe_data->socket);
-	                }
-	                else {
-	                    io_uring_cqe_seen(&context->uring, cqe);
-	                    io_write(context, cqe_data->socket, res);
-	                }
-            		break;
-            	case WRITE:
-	                io_uring_cqe_seen(&context->uring, cqe);
-	                io_read(context, cqe_data->socket, CLIENT_MESSAGE_SIZE);
-            		break;
+                case READ:
+                    res = cqe->res; //bytes read
 
+                    if (res <= 0) {
+                       //connection was closed
+                       io_uring_cqe_seen(&context->uring, cqe);
+                       close(cqe_data->socket);
+                    }
+                    else {
+                       io_uring_cqe_seen(&context->uring, cqe);
+                       io_write(context, cqe_data->socket, res);
+                    }
+                    break;
+                case WRITE:
+                    io_uring_cqe_seen(&context->uring, cqe);
+                    io_read(context, cqe_data->socket, CLIENT_MESSAGE_SIZE);
+                    break;
             }
         }
     }
