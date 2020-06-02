@@ -108,7 +108,7 @@ void* launch_uring(void *arg) {
     // main io loop
     while (1)
     {
-        io_uring_submit_and_wait(&context->uring);
+        io_uring_submit_and_wait(&context->uring, 1);
 
         struct io_uring_cqe *cqes[IO_URING_LEN];
         int total_cqes = io_uring_peek_batch_cqe(&context->uring, cqes, IO_URING_LEN);
