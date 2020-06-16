@@ -1,4 +1,6 @@
-var net = require('net');
+const net = require('net');
+
+console.log(`Node JS test echo server.`)
 
 net.createServer(function(socket){
     socket.on('data', function(data){
